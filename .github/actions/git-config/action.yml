@@ -1,0 +1,18 @@
+name: Configure Git User
+inputs:
+  GIT_PAT:
+    description: 'Infra token setup'
+    required: false
+
+description: "Setup local account"
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        [ -f ~/.gitconfig ] && sudo rm ~/.gitconfig || true
+        git config --global --add url."https://myapp:${{ inputs.GIT_PAT }}@github.com".insteadOf "https://github.com"
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        git config --global user.name "GitHub Actions"
+        git config --global user.username "github-actions"
+        git config --global user.email "myapp@test.com"
+      shell: bash

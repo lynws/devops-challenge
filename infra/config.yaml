@@ -1,0 +1,7 @@
+instance:
+  access_token_secret: HUB-TOKEN
+  instance_type: t2.micro
+  dockerhub_username: flaviuspetrisor
+  image_name: qed
+  tag: latest
+

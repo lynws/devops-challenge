@@ -1,0 +1,21 @@
+name: Configure AWS Credentials
+inputs:
+  AWS_ACCESS_KEY_ID:
+    description: 'AWS Access Key'
+    required: false
+  AWS_SECRET_ACCESS_KEY:
+    description: 'AWS Secret Access Key'
+    required: false
+
+description: "Setup local account"
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        rm -rf ~/.aws || true
+
+        aws configure set region eu-central-1
+        aws configure set aws_access_key_id ${{ inputs.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+      shell: bash
+

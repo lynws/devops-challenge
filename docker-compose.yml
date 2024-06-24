@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  myapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - '4200:3000'
+    networks:
+      - app-network
+#    healthcheck:
+#      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+
+networks:
+  app-network:
+    driver: bridge

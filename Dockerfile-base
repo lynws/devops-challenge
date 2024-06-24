@@ -1,0 +1,38 @@
+FROM alpine:3.19
+
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV TZ=Europe/Berlin
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/lib/chromium/
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+RUN apk update upgrade && apk add --no-cache chromium chromium-chromedriver
+RUN apk --no-cache update upgrade && apk add --no-cache --update --repository=https://dl-cdn.alpinelinux.org/alpine/v3.11/community/ \
+       bash curl unzip shadow sudo wget cmake gnupg sed make musl-dev gcc gettext-dev libintl g++ linux-headers openssl git
+
+RUN sudo groupadd -g 900 -o tenant
+RUN sudo useradd -m -u 900 -g 900 -o -s /bin/bash tenant
+RUN echo "tenant ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/tenant && echo "%tenant ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN apk add --no-cache tzdata --virtual .build-deps binutils zstd python3 jq grep dpkg nodejs npm
+RUN wget -O - -q "$(wget -q https://api.github.com/repos/aquasecurity/tfsec/releases/latest -O - | grep -o -E "https://.+?tfsec-linux-amd64" | head -n1)" > tfsec
+RUN install tfsec /usr/local/bin/ && rm tfsec
+
+RUN curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
+      && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.34-r0/glibc-2.34-r0.apk \
+      && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.34-r0/glibc-bin-2.34-r0.apk \
+      && apk add --force-overwrite --no-cache glibc-2.34-r0.apk glibc-bin-2.34-r0.apk \
+      && curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.13.32.zip -o awscliv2.zip \
+      && unzip awscliv2.zip && ./aws/install
+
+RUN rm -rf awscliv2.zip aws /usr/local/aws-cli/v2/*/dist/aws_completer /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index \
+    /usr/local/aws-cli/v2/*/dist/awscli/examples && rm glibc-2.34-r0.apk && rm glibc-bin-2.34-r0.apk && rm -rf /var/cache/apk/*
+
+RUN curl -O "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" \
+      && dpkg-deb -x session-manager-plugin.deb /tmp/session-manager && mv /tmp/session-manager/usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/session-manager-plugin \
+      && apk add --no-cache expect openssh && rm session-manager-plugin.deb && rm -rf /tmp/session-manager && apk add --update docker openrc
+
+RUN git config --global user.email 'myapp@test.com' && git config --global user.name 'GitHub Actions' && sudo git config --system --replace-all safe.directory '*'
+
